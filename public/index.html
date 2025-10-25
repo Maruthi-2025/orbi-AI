@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Orbi 2 Chat</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --primary: #3B82F6;    /* Vibrant blue */
+      --primary-dark: #2563EB;
+      --secondary: #06D6A0;  /* Teal accent */
+      --dark: #0F172A;       /* Deep navy */
+      --dark-light: #1E293B;
+      --light: #F8FAFC;      /* Light background */
+      --text: #E2E8F0;       /* Text color */
+      --text-secondary: #94A3B8;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, var(--dark) 0%, #0A0F1C 100%);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .primary-bg { background-color: var(--primary); }
+    .dark-bg { background-color: var(--dark); }
+    .dark-light-bg { background-color: var(--dark-light); }
+    .light-bg { background-color: var(--light); }
+    
+    .primary-text { color: var(--primary); }
+    .secondary-text { color: var(--secondary); }
+    .dark-text { color: var(--dark); }
+    .light-text { color: var(--text); }
+    .text-secondary { color: var(--text-secondary); }
+    
+    .primary-border { border-color: var(--primary); }
+    .dark-border { border-color: var(--dark); }
+    .light-border { border-color: var(--light); }
+    
+    /* Enhanced Typing Animation */
+    .typing-dots {
+      display: inline-flex;
+      gap: 4px;
+    }
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      animation: typing-bounce 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing-bounce {
+      0%, 80%, 100% { 
+        transform: scale(0.8); 
+        opacity: 0.5; 
+      }
+      40% { 
+        transform: scale(1.2); 
+        opacity: 1; 
+      }
+    }
+    
+    .message-streaming {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .message-streaming::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      animation: streaming-line 2s infinite;
+    }
+    
+    @keyframes streaming-line {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .fade-in {
+      animation: fadeInUp 0.4s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+    
+    .online-indicator {
+      width: 10px;
+      height: 10px;
+      background: linear-gradient(135deg, var(--secondary), #10B981);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      border: 2px solid var(--dark);
+      box-shadow: 0 0 0 2px rgba(6, 214, 160, 0.3);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(6, 214, 160, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0); }
+    }
+    
+    /* Modern Glass Effect */
+    .glass-effect {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Enhanced Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: 14px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border-radius: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Enhanced Input Field */
+    .input-field {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      color: var(--text);
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 
+        0 0 0 3px rgba(59, 130, 246, 0.2),
+        inset 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: rgba(15, 23, 42, 0.8);
+    }
+    
+    /* Modern Chat Bubbles */
+    .chat-bubble-user {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: 22px 22px 6px 22px;
+      padding: 16px 20px;
+      max-width: 80%;
+      align-self: flex-end;
+      box-shadow: 
+        0 4px 20px rgba(59, 130, 246, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
+      animation: messageSlideInRight 0.3s ease-out;
+    }
+    
+    .chat-bubble-ai {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border-radius: 22px 22px 22px 6px;
+      padding: 16px 20px;
+      max-width: 80%;
+      align-self: flex-start;
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      animation: messageSlideInLeft 0.3s ease-out;
+    }
+    
+    @keyframes messageSlideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+    
+    @keyframes messageSlideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+    
+    /* Enhanced Sidebar */
+    .sidebar-item {
+      padding: 14px 18px;
+      border-radius: 14px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid transparent;
+    }
+    
+    .sidebar-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateX(4px);
+    }
+    
+    .sidebar-item.active {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(6, 214, 160, 0.1));
+      border-left: 4px solid var(--primary);
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Modern Prompt Cards */
+    .prompt-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .prompt-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+      transition: left 0.6s;
+    }
+    
+    .prompt-card:hover::before {
+      left: 100%;
+    }
+    
+    .prompt-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.3),
+        0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Enhanced Gradient Text */
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+    
+    /* Modern Stop Button */
+    .stop-button {
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stop-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .stop-button:hover::before {
+      left: 100%;
+    }
+    
+    .stop-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 30px rgba(239, 68, 68, 0.4),
+        0 2px 8px rgba(239, 68, 68, 0.2);
+    }
+    
+    .stop-button:active {
+      transform: translateY(0);
+    }
+    
+    .stop-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 2px 10px rgba(239, 68, 68, 0.2);
+    }
+    
+    /* Enhanced Streaming Controls */
+    .streaming-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    /* Scrollbar Styling */
+    .messages-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(59, 130, 246, 0.5) rgba(15, 23, 42, 0.3);
+    }
+    
+    .messages-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.3);
+      border-radius: 4px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 4px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, var(--primary-dark), #059669);
+    }
+    
+    .chat-history-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(59, 130, 246, 0.5) rgba(15, 23, 42, 0.3);
+    }
+    
+    .chat-history-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-history-container::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.3);
+      border-radius: 3px;
+    }
+    
+    .chat-history-container::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.5);
+      border-radius: 3px;
+    }
+    
+    .chat-history-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.7);
+    }
+    
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 100;
+      border: none;
+    }
+    
+    .fab:hover {
+      transform: scale(1.1) rotate(90deg);
+      box-shadow: 0 12px 40px rgba(205, 211, 221, 0.6);
+    }
+    
+    /* Loading Animation */
+    .loading-wave {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    
+    .loading-bar {
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 2px;
+      animation: loading-wave 1.2s infinite ease-in-out;
+    }
+    
+    .loading-bar:nth-child(2) { animation-delay: -1.1s; }
+    .loading-bar:nth-child(3) { animation-delay: -1.0s; }
+    .loading-bar:nth-child(4) { animation-delay: -0.9s; }
+    
+    @keyframes loading-wave {
+      0%, 40%, 100% { transform: scaleY(0.6); }
+      20% { transform: scaleY(1.2); }
+    }
+    
+    /* ========== RESPONSIVE STYLES ========== */
+    
+    /* Mobile First Approach */
+    @media (max-width: 768px) {
+      .chatheader{
+        margin-top: 60px !important;
+      }
+      
+      #app {
+        flex-direction: column;
+      }
+      
+      #sidebar {
+        width: 100%;
+        height: auto;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+      }
+      
+      #sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      
+      #chatMain {
+        width: 100%;
+        height: 100vh;
+      }
+      
+      .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 30;
+        display: none;
+        backdrop-filter: blur(5px);
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 42, 0.9);
+      }
+      
+      .mobile-menu-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 10px;
+        transition: background 0.3s;
+      }
+      
+      .mobile-menu-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        max-width: 90%;
+      }
+      
+      #messages {
+        padding: 16px;
+        max-height: calc(100vh - 200px);
+      }
+      
+      #userInput {
+        padding-right: 80px;
+      }
+      
+      .input-area {
+        padding: 16px;
+      }
+      
+      .welcome-screen {
+        padding: 24px;
+      }
+      
+      .prompt-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+      }
+      
+      .streaming-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      
+      .stop-button {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .login-card {
+        width: 90% !important;
+        margin: 0 auto;
+        padding: 28px;
+      }
+      
+      .google-btn-container {
+        padding: 0 12px;
+      }
+    }
+    
+    /* Tablet Styles */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      #sidebar {
+        width: 300px;
+      }
+      
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        max-width: 85%;
+      }
+      
+      .prompt-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+    
+    /* Desktop Styles */
+    @media (min-width: 1025px) {
+      #sidebar {
+        width: 340px;
+      }
+    }
+    
+    /* Small Mobile Devices */
+    @media (max-width: 480px) {
+      .chat-bubble-user,
+      .chat-bubble-ai {
+        max-width: 95%;
+        padding: 14px 16px;
+        font-size: 14px;
+      }
+      
+      .mobile-header h1 {
+        font-size: 18px;
+      }
+      
+      .login-card {
+        padding: 24px !important;
+      }
+      
+      .google-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+      
+      #userInput {
+        font-size: 16px;
+      }
+    }
+    
+    /* Landscape Mode for Mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #messages {
+        max-height: calc(100vh - 160px);
+      }
+      
+      .input-area {
+        padding: 12px 16px;
+      }
+      
+      #userInput {
+        min-height: 44px;
+      }
+    }
+
+    /* Chat Header - Sticky Navigation */
+    .chatheader {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+<div id="app" class="w-full h-full flex">
+
+  <!-- Mobile Overlay -->
+  <div id="mobileOverlay" class="mobile-overlay"></div>
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="fixed inset-0 dark-bg flex items-center justify-center z-50">
+    <div class="card p-10 login-card w-96 mx-4">
+      <div class="text-center mb-10">
+        <div class="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
+          <i class="fas fa-brain text-3xl text-white"></i>
+        </div>
+        <h1 class="text-3xl font-bold gradient-text mb-2">Orbi 2</h1>
+        <p class="text-secondary mt-2 text-lg">Your intelligent conversation partner</p>
+      </div>
+
+      <!-- Google Sign-In Button -->
+      <div class="mb-8 google-btn-container">
+        <div id="g_id_onload" data-auto_prompt="false"></div>
+        <div class="g_id_signin" data-type="standard" data-theme="outline" data-text="sign_in_with" 
+             data-shape="rectangular" data-logo_alignment="left" data-width="100%"></div>
+      </div>
+
+      <!-- Divider -->
+      <div class="relative mb-8">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-700"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-4 dark-bg text-secondary bg-dark">Or continue with</span>
+        </div>
+      </div>
+
+      <!-- Manual Login Form -->
+      <form id="loginForm" class="space-y-6 mb-6">
+        <div>
+          <label class="block text-sm text-secondary mb-3 font-medium">Your Name</label>
+          <input id="usernameInput" type="text" placeholder="Enter your name"
+            class="w-full p-4 rounded-2xl input-field focus:outline-none text-lg" required />
+        </div>
+        <button type="submit" class="w-full btn-primary py-4 rounded-2xl font-bold text-lg">
+          Continue to Chat
+        </button>
+      </form>
+
+      <!-- Guest Option -->
+      <div class="text-center">
+        <button type="button" id="guestLink" class="text-secondary hover:text-white transition-colors font-medium">
+          Continue as Guest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Chat Interface -->
+  <div id="chatMain" class="flex-1 hidden flex h-full">
+    
+    <!-- Sidebar -->
+    <aside id="sidebar" class="dark-bg border-r border-gray-800 flex flex-col glass-effect">
+      <!-- Mobile Header -->
+      <div class="mobile-header lg:hidden">
+        <h1 class="text-xl font-bold light-text">Conversations</h1>
+        <button id="closeSidebar" class="mobile-menu-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- User Profile Header -->
+      <div class="p-6 border-b border-gray-800 hidden lg:block">
+        <div class="flex items-center space-x-4">
+          <div class="relative">
+            <img id="userAvatar" src="" alt="User" class="w-12 h-12 rounded-2xl bg-gray-700 object-cover"
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiByeD0iMjQiIGZpbGw9IiMxRTE5MkIiLz4KPHBhdGggZD0iTTI0IDI2QzI4LjQxODMgMjYgMzIgMjIuNDE4MyAzMiAxOEMzMiAxMy41ODE3IDI4LjQxODMgMTAgMjQgMTBDMTkuNTgxNyAxMCAxNiAxMy41ODE3IDE2IDE4QzE2IDIyLjQxODMgMTkuNTgxNyAyNiAyNCAyNloiIGZpbGw9IiM2QjcyODAiLz4KPHBhdGggZD0iTTI0IDI4QzE3IDI4IDEwIDMxIDEwIDM4SDM4QzM4IDMxIDMxIDI4IDI0IDI4WiIgZmlsbD0iIzZCNzI4MCIvPgo8L3N2Zz4K'">
+            <div class="online-indicator"></div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h2 id="userName" class="font-semibold truncate light-text text-lg">User</h2>
+            <p class="text-sm secondary-text flex items-center mt-1">
+              <span class="w-2 h-2 rounded-full mr-2" style="background: var(--secondary)"></span>
+              Online & Ready
+            </p>
+            <p id="userEmail" class="text-xs text-secondary truncate mt-1"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Chat Button -->
+      <div class="p-6">
+        <button id="newChatBtn" class="w-full btn-primary py-4 rounded-2xl font-semibold flex items-center justify-center space-x-3 text-lg">
+          <i class="fas fa-plus"></i>
+          <span>New Conversation</span>
+        </button>
+      </div>
+
+      <!-- Chat History -->
+      <div class="flex-1 overflow-hidden">
+        <div class="px-6 py-4">
+          <h3 class="text-sm font-semibold text-secondary uppercase tracking-wider">Recent Conversations</h3>
+        </div>
+        <div id="chatHistory" class="chat-history-container space-y-2 px-4 overflow-y-auto max-h-[calc(100vh-280px)]">
+          <!-- Chat history will be populated here -->
+        </div>
+      </div>
+
+      <!-- Settings & Logout -->
+      <div class="p-6 border-t border-gray-800">
+        <div class="space-y-3">
+          <button id="settingsBtn" class="w-full text-left p-4 rounded-2xl btn-secondary flex items-center space-x-4">
+            <i class="fas fa-cog text-secondary w-5"></i>
+            <span>Settings</span>
+          </button>
+          <button id="logoutBtn" class="w-full text-left p-4 rounded-2xl btn-secondary flex items-center space-x-4 text-red-400">
+            <i class="fas fa-sign-out-alt w-5"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col dark-bg relative">
+      
+      <!-- Chat Header -->
+      <header class="chatheader">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <!-- Mobile Menu Button -->
+            <button id="mobileMenuBtn" class="mobile-menu-btn lg:hidden mr-4">
+              <i class="fas fa-bars"></i>
+            </button>
+            <div>
+              <h1 id="currentChatTitle" class="text-xl font-semibold light-text">New Conversation</h1>
+              <div class="flex items-center space-x-4 text-sm text-secondary mt-1">
+                <span id="messageCount">0 messages</span>
+                <span class="hidden sm:inline">•</span>
+                <span id="modelInfo" class="gradient-text font-medium hidden sm:inline">Orbi 2 Pro</span>
+                <span class="hidden sm:inline">•</span>
+                <span id="connectionStatus" class="secondary-text">
+                  <i class="fas fa-circle text-xs mr-1"></i>
+                  <span class="hidden sm:inline">Connected</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="text-sm text-secondary hidden md:flex items-center">
+              <span id="apiStatus">Ready</span>
+              <span class="mx-3">•</span>
+              <span id="responseTime">-</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Messages Area -->
+      <div class="flex-1 flex flex-col">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="flex-1 flex flex-col items-center justify-center p-8 welcome-screen">
+          <div class="text-center max-w-2xl">
+            <div class="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-8" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
+              <i class="fas fa-brain text-4xl text-white"></i>
+            </div>
+            <h2 id="greetMessage" class="text-4xl font-bold light-text mb-6">Welcome to Orbi 2</h2>
+            <p class="text-secondary text-xl mb-10 leading-relaxed">
+              I'm here to help with creative ideas, problem solving, and engaging conversations. What would you like to explore today?
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto prompt-grid">
+              <div class="prompt-card" data-prompt="Explain quantum computing in simple terms">
+                <i class="fas fa-lightbulb text-2xl mb-3 gradient-text"></i>
+                <div class="font-semibold light-text text-lg">Explain Concepts</div>
+                <div class="text-sm text-secondary mt-2">Break down complex topics into easy understanding</div>
+              </div>
+              <div class="prompt-card" data-prompt="Write a Python script to sort a list and explain how it works">
+                <i class="fas fa-code text-2xl mb-3 gradient-text"></i>
+                <div class="font-semibold light-text text-lg">Write Code</div>
+                <div class="text-sm text-secondary mt-2">Generate programming solutions with explanations</div>
+              </div>
+              <div class="prompt-card" data-prompt="Help me plan a productive week with work-life balance">
+                <i class="fas fa-calendar text-2xl mb-3 gradient-text"></i>
+                <div class="font-semibold light-text text-lg">Plan & Organize</div>
+                <div class="text-sm text-secondary mt-2">Create schedules and productivity strategies</div>
+              </div>
+              <div class="prompt-card" data-prompt="Brainstorm creative ideas for a new mobile app">
+                <i class="fas fa-lightbulb text-2xl mb-3 gradient-text"></i>
+                <div class="font-semibold light-text text-lg">Brainstorm</div>
+                <div class="text-sm text-secondary mt-2">Generate innovative ideas and creative solutions</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messages" class="messages-container flex-1 flex flex-col p-8 space-y-8 overflow-y-auto">
+          <!-- Messages will be populated here -->
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="border-t border-gray-800 p-6 glass-effect input-area">
+        <div class="max-w-5xl mx-auto">
+          <div class="relative">
+            <textarea 
+              id="userInput" 
+              rows="1" 
+              placeholder="Message Orbi 2..." 
+              class="w-full input-field p-5 pr-36 rounded-2xl resize-none focus:outline-none border-2 border-gray-700 text-lg"
+              maxlength="4000"
+            ></textarea>
+            
+            <div class="absolute right-4 bottom-4 flex items-center space-x-3">
+              <div id="charCount" class="text-sm text-secondary hidden sm:block font-medium">0/4000</div>
+              <button id="sendBtn" class="btn-primary p-4 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-paper-plane text-lg"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Enhanced Streaming Controls -->
+          <div id="streamingControls" class="streaming-controls hidden">
+            <button id="stopBtn" class="stop-button">
+              <i class="fas fa-stop-circle"></i>
+              Stop Generating
+            </button>
+            <div id="typingStatus" class="flex items-center space-x-3">
+              <div class="loading-wave">
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+              </div>
+              <span class="text-secondary font-medium">AI is thinking...</span>
+            </div>
+          </div>
+          
+          <div class="flex justify-between items-center mt-4 text-sm text-secondary">
+            <div class="flex items-center space-x-6">
+              <button id="clearChat" class="hover:text-white transition-colors flex items-center space-x-2 font-medium">
+                <i class="fas fa-trash"></i>
+                <span>Clear Chat</span>
+              </button>
+              <button id="exportChat" class="hover:text-white transition-colors hidden sm:flex items-center space-x-2 font-medium">
+                <i class="fas fa-download"></i>
+                <span>Export</span>
+              </button>
+            </div>
+            <div class="text-xs font-medium">
+              Orbi 2 • Developed by Maruthi
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Floating Action Button for Mobile -->
+<button id="fab" class="fab lg:hidden">
+  <i class="fas fa-plus"></i>
+</button>
+
+<script>
+// Professional ChatBot Class with Enhanced Features
+class ProfessionalChatBot {
+  constructor() {
+    this.currentUser = null;
+    this.userProfile = {
+      name: '',
+      avatar: '',
+      email: '',
+      loginMethod: 'manual'
+    };
+    this.chatHistory = {};
+    this.currentChatId = null;
+    this.isProcessing = false;
+    this.isStreaming = false;
+    this.connectionStatus = 'online';
+    this.currentStreamController = null;
+    this.autoScrollEnabled = true;
+    this.isMobileSidebarOpen = false;
+    this.textSpeed = 15; // Faster text generation (milliseconds between words)
+    
+    this.initializeElements();
+    this.setupEventListeners();
+    this.initializeGoogleSignIn();
+    this.init();
+  }
+
+  // ==================== GOOGLE SIGN-IN SETUP ====================
+  initializeGoogleSignIn() {
+    if (typeof google === 'undefined') {
+      console.warn('Google Identity Services not loaded');
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: '157882289695-4qevi9ldg5qov5s86u9t4q5ggdfdd0kp.apps.googleusercontent.com',
+      callback: this.handleGoogleSignIn.bind(this),
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+
+    const googleButtonContainer = document.querySelector('.g_id_signin');
+    if (googleButtonContainer) {
+      window.google.accounts.id.renderButton(googleButtonContainer, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'sign_in_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: '100%'
+      });
+    }
+
+    window.google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // Continue with another method...
+      }
+    });
+  }
+
+  // ==================== GOOGLE SIGN-IN HANDLER ====================
+  async handleGoogleSignIn(response) {
+    try {
+      console.log('Google Sign-In response received');
+      this.showLoadingState('Signing in with Google...');
+
+      const userData = this.parseJwt(response.credential);
+      console.log('Google user data:', userData);
+
+      if (userData && userData.name && userData.picture) {
+        this.userProfile = {
+          name: userData.name,
+          avatar: userData.picture,
+          email: userData.email,
+          loginMethod: 'google'
+        };
+
+        await this.saveUserProfile();
+        this.showMainInterface();
+        this.showNotification('Welcome to Orbi 2, ' + userData.name + '!', 'success');
+      } else {
+        throw new Error('Invalid user data from Google');
+      }
+    } catch (error) {
+      console.error('Google Sign-In error:', error);
+      this.showNotification('Google Sign-In failed. Please try again.', 'error');
+      this.hideLoadingState();
+    }
+  }
+
+  parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Error parsing JWT:', error);
+      return null;
+    }
+  }
+
+  // ==================== LOADING STATES ====================
+  showLoadingState(message) {
+    let loadingOverlay = document.getElementById('loadingOverlay');
+    if (!loadingOverlay) {
+      loadingOverlay = document.createElement('div');
+      loadingOverlay.id = 'loadingOverlay';
+      loadingOverlay.className = 'fixed inset-0 dark-bg bg-opacity-90 flex items-center justify-center z-50';
+      loadingOverlay.innerHTML = `
+        <div class="card p-8 flex flex-col items-center space-y-6">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
+            <i class="fas fa-brain text-2xl text-white"></i>
+          </div>
+          <div class="text-center">
+            <div class="loading-wave mb-4">
+              <div class="loading-bar"></div>
+              <div class="loading-bar"></div>
+              <div class="loading-bar"></div>
+              <div class="loading-bar"></div>
+            </div>
+            <span class="light-text text-lg font-medium">${message}</span>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(loadingOverlay);
+    }
+  }
+
+  hideLoadingState() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.remove();
+    }
+  }
+
+  showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-6 right-6 p-5 rounded-2xl z-50 transition-all duration-300 transform translate-x-full ${
+      type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 
+      type === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-600' : 
+      'bg-gradient-to-r from-blue-500 to-indigo-600'
+    }`;
+    notification.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <i class="fas ${
+          type === 'success' ? 'fa-check-circle' : 
+          type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'
+        } text-white text-lg"></i>
+        <span class="text-white font-medium">${message}</span>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.classList.remove('translate-x-full');
+      notification.classList.add('translate-x-0');
+    }, 10);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+      notification.classList.remove('translate-x-0');
+      notification.classList.add('translate-x-full');
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, 4000);
+  }
+
+  // ==================== INITIALIZATION ====================
+  initializeElements() {
+    // Authentication elements
+    this.loginScreen = document.getElementById('loginScreen');
+    this.loginForm = document.getElementById('loginForm');
+    this.usernameInput = document.getElementById('usernameInput');
+    this.guestLink = document.getElementById('guestLink');
+    this.chatMain = document.getElementById('chatMain');
+    
+    // User profile elements
+    this.userAvatar = document.getElementById('userAvatar');
+    this.userName = document.getElementById('userName');
+    this.userEmail = document.getElementById('userEmail');
+    this.logoutBtn = document.getElementById('logoutBtn');
+    this.settingsBtn = document.getElementById('settingsBtn');
+
+    // Chat interface elements
+    this.sidebar = document.getElementById('sidebar');
+    this.chatHistoryDiv = document.getElementById('chatHistory');
+    this.welcomeScreen = document.getElementById('welcomeScreen');
+    this.messagesDiv = document.getElementById('messages');
+    this.userInput = document.getElementById('userInput');
+    this.sendBtn = document.getElementById('sendBtn');
+    this.newChatBtn = document.getElementById('newChatBtn');
+    
+    // Status and info elements
+    this.apiStatus = document.getElementById('apiStatus');
+    this.responseTime = document.getElementById('responseTime');
+    this.charCount = document.getElementById('charCount');
+    this.messageCount = document.getElementById('messageCount');
+    this.currentChatTitle = document.getElementById('currentChatTitle');
+    this.connectionStatusEl = document.getElementById('connectionStatus');
+    this.modelInfo = document.getElementById('modelInfo');
+    this.greetMessage = document.getElementById('greetMessage');
+    
+    // Streaming controls
+    this.streamingControls = document.getElementById('streamingControls');
+    this.stopBtn = document.getElementById('stopBtn');
+    this.typingStatus = document.getElementById('typingStatus');
+    
+    // Action buttons
+    this.clearChat = document.getElementById('clearChat');
+    this.exportChat = document.getElementById('exportChat');
+    
+    // Mobile elements
+    this.mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    this.closeSidebar = document.getElementById('closeSidebar');
+    this.mobileOverlay = document.getElementById('mobileOverlay');
+    this.fab = document.getElementById('fab');
+
+    // Setup scroll listener
+    setTimeout(() => {
+      this.setupScrollListener();
+    }, 1000);
+  }
+
+  // ==================== MOBILE SIDEBAR MANAGEMENT ====================
+  toggleMobileSidebar() {
+    this.isMobileSidebarOpen = !this.isMobileSidebarOpen;
+    
+    if (this.isMobileSidebarOpen) {
+      this.sidebar.classList.add('mobile-open');
+      this.mobileOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } else {
+      this.sidebar.classList.remove('mobile-open');
+      this.mobileOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  closeMobileSidebar() {
+    this.isMobileSidebarOpen = false;
+    this.sidebar.classList.remove('mobile-open');
+    this.mobileOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // ==================== SCROLL MANAGEMENT ====================
+  scrollToBottom() {
+    if (this.autoScrollEnabled) {
+      setTimeout(() => {
+        if (this.messagesDiv) {
+          this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
+        }
+      }, 100);
+    }
+  }
+
+  checkAutoScroll() {
+    if (this.messagesDiv) {
+      const isNearBottom = this.messagesDiv.scrollHeight - this.messagesDiv.scrollTop - this.messagesDiv.clientHeight < 100;
+      this.autoScrollEnabled = isNearBottom;
+    }
+  }
+
+  setupScrollListener() {
+    if (this.messagesDiv) {
+      this.messagesDiv.addEventListener('scroll', () => {
+        this.checkAutoScroll();
+      });
+    }
+  }
+
+  // ==================== AUTHENTICATION ====================
+  async handleManualLogin(event) {
+    event.preventDefault();
+    const username = this.usernameInput.value.trim();
+    if (!username) return;
+
+    this.userProfile = {
+      name: username,
+      avatar: '',
+      email: '',
+      loginMethod: 'manual'
+    };
+
+    await this.saveUserProfile();
+    this.showMainInterface();
+    this.showNotification('Welcome to Orbi 2, ' + username + '!', 'success');
+  }
+
+  handleGuestLogin() {
+    this.userProfile = {
+      name: 'Guest',
+      avatar: '',
+      email: '',
+      loginMethod: 'guest'
+    };
+    this.saveUserProfile();
+    this.showMainInterface();
+    this.showNotification('Welcome to Orbi 2, Guest!', 'info');
+  }
+
+  // ==================== USER PROFILE MANAGEMENT ====================
+  async saveUserProfile() {
+    try {
+      localStorage.setItem('orbi2UserProfile', JSON.stringify(this.userProfile));
+      this.currentUser = this.userProfile.name;
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+    }
+  }
+
+  loadUserProfile() {
+    try {
+      const profile = localStorage.getItem('orbi2UserProfile');
+      if (profile) {
+        this.userProfile = JSON.parse(profile);
+        this.currentUser = this.userProfile.name;
+        return true;
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+    return false;
+  }
+
+  updateUserInterface() {
+    // Update user profile in sidebar
+    this.userName.textContent = this.userProfile.name;
+    this.userEmail.textContent = this.userProfile.email || '';
+    
+    if (this.userProfile.avatar) {
+      this.userAvatar.src = this.userProfile.avatar;
+    } else {
+      const initials = this.userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase();
+      this.userAvatar.src = 'data:image/svg+xml;base64,' + btoa(
+        `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="24" fill="#1E293B"/>
+          <text x="24" y="32" text-anchor="middle" fill="#94A3B8" font-family="Arial" font-size="16" font-weight="bold">${initials}</text>
+        </svg>`
+      );
+    }
+
+    // Update greeting
+    this.greetMessage.textContent = 'Welcome back, ' + this.userProfile.name + '!';
+  }
+
+  // ==================== CHAT MANAGEMENT ====================
+  initializeChatSession() {
+    this.chatHistory = this.loadChatHistory();
+    
+    if (Object.keys(this.chatHistory).length > 0) {
+      const chatIds = Object.keys(this.chatHistory);
+      this.currentChatId = chatIds[chatIds.length - 1];
+    } else {
+      this.createNewChat();
+    }
+    
+    this.renderChatSidebar();
+    this.renderChatMessages();
+    this.updateMessageCount();
+  }
+
+  createNewChat() {
+    this.currentChatId = 'chat_' + Date.now();
+    this.chatHistory[this.currentChatId] = {
+      id: this.currentChatId,
+      title: 'New Conversation',
+      messages: [],
+      timestamp: Date.now(),
+      model: 'orbi-2-pro'
+    };
+    this.saveChatHistory();
+    this.currentChatTitle.textContent = 'New Conversation';
+    return this.currentChatId;
+  }
+
+  // ==================== REAL-TIME MESSAGING ====================
+  async handleSendMessage() {
+    const message = this.userInput.value.trim();
+    if (!message || this.isProcessing) return;
+    
+    this.isProcessing = true;
+    this.userInput.value = '';
+    this.updateCharCount();
+    this.disableInput();
+    
+    // Close mobile sidebar if open
+    if (this.isMobileSidebarOpen) {
+      this.closeMobileSidebar();
+    }
+    
+    // Add user message with user's avatar
+    const userMessageId = this.addMessageToChat(message, 'user');
+    
+    // Show streaming controls
+    this.showStreamingControls();
+    const typingIndicator = this.showTypingIndicator();
+    const startTime = Date.now();
+    
+    try {
+      // Use streaming for real-time experience
+      await this.streamBotResponse(message, typingIndicator, startTime);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        this.handleApiError(error, typingIndicator);
+      }
+    } finally {
+      this.isProcessing = false;
+      this.enableInput();
+      this.hideStreamingControls();
+    }
+  }
+
+  async streamBotResponse(userMessage, typingIndicator, startTime) {
+    this.isStreaming = true;
+    const messageId = this.addMessageToChat('', 'bot');
+    const messageElement = document.getElementById('message-' + messageId);
+    
+    if (messageElement) {
+      messageElement.classList.add('message-streaming');
+      
+      // Create an AbortController for stopping the stream
+      this.currentStreamController = new AbortController();
+      
+      try {
+        const botReply = await this.getBotReplyStreaming(
+          userMessage, 
+          (chunk) => {
+            this.updateStreamingMessage(messageId, chunk);
+          },
+          this.currentStreamController.signal
+        );
+        
+        this.finalizeStreamingMessage(messageId, botReply);
+        this.updateResponseTime(Date.now() - startTime);
+        
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          this.updateStreamingMessage(messageId, 'Sorry, I encountered an error. Please try again.');
+          throw error;
+        } else {
+          // Stream was stopped by user
+          this.updateStreamingMessage(messageId, this.getCurrentMessageText(messageId) + ' (Stopped)');
+        }
+      } finally {
+        messageElement.classList.remove('message-streaming');
+        this.isStreaming = false;
+        this.currentStreamController = null;
+      }
+    }
+    
+    typingIndicator.remove();
+  }
+
+  async getBotReplyStreaming(userMessage, onChunk, signal) {
+    // Simulate streaming for real-time experience with abort capability
+    const response = await this.getBotReply(userMessage);
+    const words = response.split(' ');
+    let accumulatedText = '';
+    
+    for (let i = 0; i < words.length; i++) {
+      // Check if the stream was aborted
+      if (signal.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      
+      // Simulate network delay with faster speed
+      await new Promise(resolve => setTimeout(resolve, this.textSpeed + Math.random() * 10));
+      accumulatedText += (i === 0 ? '' : ' ') + words[i];
+      onChunk(accumulatedText);
+      
+      // Update typing status with realistic timing
+      if (i % 3 === 0) { // More frequent updates for smoother feel
+        this.updateTypingProgress(i / words.length);
+      }
+    }
+    
+    return response;
+  }
+
+  // ==================== STOP FUNCTIONALITY ====================
+  handleStopGeneration() {
+    if (this.currentStreamController) {
+      this.currentStreamController.abort();
+      this.showNotification('Response generation stopped', 'info');
+    }
+    this.hideStreamingControls();
+    this.enableInput();
+    this.isProcessing = false;
+    this.isStreaming = false;
+  }
+
+  showStreamingControls() {
+    this.streamingControls.classList.remove('hidden');
+    this.typingStatus.classList.remove('hidden');
+  }
+
+  hideStreamingControls() {
+    this.streamingControls.classList.add('hidden');
+    this.typingStatus.classList.add('hidden');
+  }
+
+  // ==================== MESSAGE RENDERING ====================
+  addMessageToChat(text, sender) {
+    if (!this.currentChatId || !this.chatHistory[this.currentChatId]) {
+      this.createNewChat();
+    }
+    
+    const chat = this.chatHistory[this.currentChatId];
+    const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    const message = {
+      id: messageId,
+      sender,
+      text,
+      timestamp: Date.now(),
+      userAvatar: sender === 'user' ? this.userProfile.avatar : null
+    };
+    
+    chat.messages.push(message);
+    
+    // Update chat title with first message
+    if (chat.messages.length === 1) {
+      chat.title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+      this.currentChatTitle.textContent = chat.title;
+      this.renderChatSidebar();
+    }
+    
+    this.saveChatHistory();
+    this.addMessageToUI(text, sender, true, messageId);
+    this.updateMessageCount();
+    
+    return messageId;
+  }
+
+  addMessageToUI(text, sender, scroll = true, messageId = null) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'flex ' + (sender === 'user' ? 'justify-end' : 'justify-start') + ' fade-in';
+    if (messageId) {
+      messageDiv.id = 'message-' + messageId;
+    }
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai';
+    
+    if (sender === 'bot') {
+      contentDiv.innerHTML = this.formatBotResponse(text);
+    } else {
+      contentDiv.textContent = text;
+    }
+    
+    messageDiv.appendChild(contentDiv);
+    this.messagesDiv.appendChild(messageDiv);
+    
+    if (scroll) {
+      this.scrollToBottom();
+    }
+    
+    this.hideWelcomeScreen();
+  }
+
+  updateStreamingMessage(messageId, text) {
+    const messageElement = document.getElementById('message-' + messageId);
+    if (messageElement) {
+      const contentDiv = messageElement.querySelector('div');
+      if (contentDiv) {
+        contentDiv.innerHTML = this.formatBotResponse(text);
+        // Only auto-scroll if user hasn't manually scrolled up
+        this.scrollToBottom();
+      }
+    }
+  }
+
+  // ==================== UI UPDATES & STATUS ====================
+  updateTypingProgress(progress) {
+    const dots = Math.floor(progress * 3) + 1;
+    this.typingStatus.innerHTML = `
+      <div class="loading-wave">
+        <div class="loading-bar"></div>
+        <div class="loading-bar"></div>
+        <div class="loading-bar"></div>
+        <div class="loading-bar"></div>
+      </div>
+      <span class="text-secondary font-medium">AI is thinking${'.'.repeat(dots)}</span>
+    `;
+  }
+
+  updateConnectionStatus(status) {
+    this.connectionStatus = status;
+    const statusMap = {
+      online: { text: 'Connected', color: 'secondary-text', icon: 'fa-circle' },
+      offline: { text: 'Offline', color: 'text-red-400', icon: 'fa-circle' },
+      connecting: { text: 'Connecting', color: 'text-yellow-400', icon: 'fa-sync fa-spin' }
+    };
+    
+    const currentStatus = statusMap[status] || statusMap.offline;
+    this.connectionStatusEl.className = currentStatus.color;
+    this.connectionStatusEl.innerHTML = `
+      <i class="fas ${currentStatus.icon} text-xs mr-1"></i>
+      <span class="hidden sm:inline">${currentStatus.text}</span>
+    `;
+  }
+
+  updateApiStatus(status) {
+    const statusMap = {
+      ready: { text: 'Ready', color: 'secondary-text' },
+      requesting: { text: 'Processing...', color: 'text-yellow-400' },
+      success: { text: 'Success', color: 'secondary-text' },
+      error: { text: 'Error', color: 'text-red-400' }
+    };
+    
+    const currentStatus = statusMap[status] || statusMap.ready;
+    this.apiStatus.textContent = currentStatus.text;
+    this.apiStatus.className = currentStatus.color;
+  }
+
+  // ==================== EVENT HANDLERS ====================
+  setupEventListeners() {
+    // Authentication
+    this.loginForm.addEventListener('submit', (e) => this.handleManualLogin(e));
+    this.guestLink.addEventListener('click', () => this.handleGuestLogin());
+    this.logoutBtn.addEventListener('click', () => this.handleLogout());
+
+    // Chat interactions
+    this.sendBtn.addEventListener('click', () => this.handleSendMessage());
+    this.userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.handleSendMessage();
+      }
+    });
+    this.userInput.addEventListener('input', () => {
+      this.updateCharCount();
+      this.autoResizeTextarea();
+    });
+
+    // Stop button
+    this.stopBtn.addEventListener('click', () => this.handleStopGeneration());
+
+    // Chat management
+    this.newChatBtn.addEventListener('click', () => {
+      this.createNewChat();
+      this.renderChatSidebar();
+      this.renderChatMessages();
+      this.userInput.focus();
+    });
+
+    // Mobile sidebar
+    this.mobileMenuBtn.addEventListener('click', () => this.toggleMobileSidebar());
+    this.closeSidebar.addEventListener('click', () => this.closeMobileSidebar());
+    this.mobileOverlay.addEventListener('click', () => this.closeMobileSidebar());
+    this.fab.addEventListener('click', () => this.toggleMobileSidebar());
+
+    // Quick prompts
+    document.querySelectorAll('[data-prompt]').forEach(element => {
+      element.addEventListener('click', () => {
+        this.userInput.value = element.getAttribute('data-prompt');
+        this.updateCharCount();
+        this.userInput.focus();
+        this.closeMobileSidebar();
+      });
+    });
+
+    // Additional actions
+    this.clearChat.addEventListener('click', () => this.clearCurrentChat());
+    this.exportChat.addEventListener('click', () => this.exportChatHistory());
+    
+    // Window resize handler
+    window.addEventListener('resize', () => {
+      // Close mobile sidebar on resize to larger screens
+      if (window.innerWidth >= 1024 && this.isMobileSidebarOpen) {
+        this.closeMobileSidebar();
+      }
+    });
+  }
+
+  // ==================== UTILITIES ====================
+  formatBotResponse(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-gray-700 px-2 py-1 rounded-lg font-mono text-sm">$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  showTypingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'flex justify-start fade-in';
+    div.innerHTML = `
+      <div class="chat-bubble-ai">
+        <div class="flex items-center space-x-3">
+          <div class="loading-wave">
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+          </div>
+          <span class="text-secondary font-medium">Orbi 2 is thinking...</span>
+        </div>
+      </div>
+    `;
+    
+    this.messagesDiv.appendChild(div);
+    this.scrollToBottom();
+    
+    return {
+      remove: () => {
+        if (div.parentNode) {
+          div.parentNode.removeChild(div);
+        }
+      }
+    };
+  }
+
+  getCurrentMessageText(messageId) {
+    const messageElement = document.getElementById('message-' + messageId);
+    if (messageElement) {
+      const contentDiv = messageElement.querySelector('div');
+      if (contentDiv) {
+        return contentDiv.textContent || contentDiv.innerText;
+      }
+    }
+    return '';
+  }
+
+  // ==================== STORAGE MANAGEMENT ====================
+  loadChatHistory() {
+    try {
+      const history = localStorage.getItem('orbi2ChatHistory');
+      return history ? JSON.parse(history) : {};
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      return {};
+    }
+  }
+
+  saveChatHistory() {
+    try {
+      localStorage.setItem('orbi2ChatHistory', JSON.stringify(this.chatHistory));
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
+  }
+
+  // ==================== SCREEN MANAGEMENT ====================
+  showLoginScreen() {
+    this.loginScreen.classList.remove('hidden');
+    this.chatMain.classList.add('hidden');
+    setTimeout(() => this.usernameInput.focus(), 100);
+  }
+
+  showMainInterface() {
+    this.loginScreen.classList.add('hidden');
+    this.chatMain.classList.remove('hidden');
+    this.updateUserInterface();
+    this.initializeChatSession();
+    this.updateConnectionStatus('online');
+    this.userInput.focus();
+    this.hideLoadingState();
+  }
+
+  // ==================== INITIALIZATION ====================
+  init() {
+    if (this.loadUserProfile()) {
+      this.showMainInterface();
+    } else {
+      this.showLoginScreen();
+    }
+    
+    // Setup scroll listener
+    setTimeout(() => {
+      this.setupScrollListener();
+    }, 1000);
+    
+    // Simulate connection monitoring
+    setInterval(() => {
+      this.updateConnectionStatus('online');
+    }, 30000);
+  }
+
+  // ==================== ADDITIONAL METHODS ====================
+  handleLogout() {
+    // Revoke Google authentication if applicable
+    if (this.userProfile.loginMethod === 'google' && typeof google !== 'undefined') {
+      window.google.accounts.id.revoke(this.userProfile.email, (done) => {
+        console.log('Google access revoked');
+      });
+    }
+
+    // Clear local storage
+    localStorage.removeItem('orbi2UserProfile');
+    localStorage.removeItem('orbi2ChatHistory');
+    
+    // Reset state
+    this.currentUser = null;
+    this.userProfile = {};
+    this.currentChatId = null;
+    this.chatHistory = {};
+    
+    // Show login screen
+    this.showLoginScreen();
+    this.showNotification('You have been logged out', 'info');
+  }
+
+  clearCurrentChat() {
+    if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+      this.chatHistory[this.currentChatId].messages = [];
+      this.saveChatHistory();
+      this.renderChatMessages();
+      this.showNotification('Conversation cleared', 'success');
+    }
+  }
+
+  exportChatHistory() {
+    if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+      const chat = this.chatHistory[this.currentChatId];
+      const content = chat.messages.map(msg => 
+        (msg.sender === 'user' ? 'You' : 'Orbi 2') + ': ' + msg.text
+      ).join('\n\n');
+      
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'orbi-2-chat-' + this.currentChatId + '.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      this.showNotification('Chat exported successfully', 'success');
+    }
+  }
+
+  // ==================== CHAT SIDEBAR RENDERING ====================
+  renderChatSidebar() {
+    if (!this.chatHistoryDiv) return;
+    
+    this.chatHistoryDiv.innerHTML = '';
+    const chats = Object.values(this.chatHistory)
+      .sort((a, b) => b.timestamp - a.timestamp);
+    
+    chats.forEach(chat => {
+      const div = document.createElement('div');
+      div.className = 'sidebar-item ' + (chat.id === this.currentChatId ? 'active' : '');
+      
+      div.innerHTML = `
+        <div class="font-semibold text-base truncate light-text">${chat.title}</div>
+        <div class="text-sm text-secondary mt-2">
+          ${new Date(chat.timestamp).toLocaleTimeString()} • ${chat.messages.length} messages
+        </div>
+      `;
+      
+      div.addEventListener('click', () => {
+        this.switchToChat(chat.id);
+        this.closeMobileSidebar();
+      });
+      this.chatHistoryDiv.appendChild(div);
+    });
+  }
+
+  renderChatMessages() {
+    if (!this.messagesDiv) return;
+    
+    this.messagesDiv.innerHTML = '';
+    
+    if (!this.currentChatId || !this.chatHistory[this.currentChatId]) {
+      this.showWelcomeScreen();
+      return;
+    }
+    
+    const chat = this.chatHistory[this.currentChatId];
+    if (!chat.messages.length) {
+      this.showWelcomeScreen();
+      return;
+    }
+    
+    this.hideWelcomeScreen();
+    this.currentChatTitle.textContent = chat.title;
+    
+    chat.messages.forEach((message) => {
+      this.addMessageToUI(message.text, message.sender, false, message.id);
+    });
+    
+    this.scrollToBottom();
+  }
+
+  switchToChat(chatId) {
+    this.currentChatId = chatId;
+    this.renderChatSidebar();
+    this.renderChatMessages();
+    this.updateMessageCount();
+  }
+
+  showWelcomeScreen() {
+    this.welcomeScreen.classList.remove('hidden');
+    this.messagesDiv.classList.add('hidden');
+  }
+
+  hideWelcomeScreen() {
+    this.welcomeScreen.classList.add('hidden');
+    this.messagesDiv.classList.remove('hidden');
+  }
+
+  updateCharCount() {
+    const count = this.userInput.value.length;
+    this.charCount.textContent = count + '/4000';
+  }
+
+  updateMessageCount() {
+    if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+      const count = this.chatHistory[this.currentChatId].messages.length;
+      this.messageCount.textContent = count + ' message' + (count !== 1 ? 's' : '');
+    }
+  }
+
+  updateResponseTime(time) {
+    this.responseTime.textContent = time + 'ms';
+  }
+
+  autoResizeTextarea() {
+    this.userInput.style.height = 'auto';
+    this.userInput.style.height = Math.min(this.userInput.scrollHeight, 150) + 'px';
+  }
+
+  disableInput() {
+    this.userInput.disabled = true;
+    this.sendBtn.disabled = true;
+  }
+
+  enableInput() {
+    this.userInput.disabled = false;
+    this.sendBtn.disabled = false;
+    this.userInput.focus();
+  }
+
+  finalizeStreamingMessage(messageId, finalText) {
+    const messageElement = document.getElementById('message-' + messageId);
+    if (messageElement) {
+      messageElement.classList.remove('message-streaming');
+      
+      // Update the chat history with the final text
+      if (this.currentChatId && this.chatHistory[this.currentChatId]) {
+        const chat = this.chatHistory[this.currentChatId];
+        const message = chat.messages.find(msg => msg.id === messageId);
+        if (message) {
+          message.text = finalText;
+          this.saveChatHistory();
+        }
+      }
+    }
+  }
+
+  handleApiError(error, typingIndicator) {
+    console.error('API Error:', error);
+    typingIndicator.remove();
+    this.hideStreamingControls();
+    this.addMessageToChat(
+      'Sorry, I encountered an error while processing your request. Please try again in a moment.',
+      'bot'
+    );
+    this.updateConnectionStatus('offline');
+    setTimeout(() => this.updateConnectionStatus('online'), 5000);
+  }
+
+  async getBotReply(userMessage) {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Handle identity questions
+    if (lowerMessage.includes('who are you') || 
+        lowerMessage.includes('what is your name') ||
+        lowerMessage.includes('what are you') ||
+        lowerMessage.includes('your name') ||
+        lowerMessage === 'whats your name' ||
+        lowerMessage === 'what\'s your name') {
+      return "I'm Orbi 2.0, your intelligent conversation partner! I'm here to help with creative ideas, problem solving, and engaging conversations.";
+    }
+    
+    // Handle developer questions
+    if (lowerMessage.includes('who developed you') ||
+        lowerMessage.includes('who created you') ||
+        lowerMessage.includes('who made you') ||
+        lowerMessage.includes('who is your developer') ||
+        lowerMessage.includes('who is your creator') ||
+        lowerMessage.includes('who built you')) {
+      return "I was developed by Maruthi. He created Orbi 2.0 to provide intelligent and helpful conversations!";
+    }
+
+    // Rest of your existing API code...
+    const API_KEY = "AIzaSyDuoUOxfOPi75dPt9MB2JqznbdPOcT91Es";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+    
+    const body = {
+      contents: [{ parts: [{ text: userMessage }] }]
+    };
+    
+    this.updateApiStatus('requesting');
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      this.updateApiStatus('success');
+      
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response. Please try again.";
+      
+    } catch (error) {
+      this.updateApiStatus('error');
+      throw error;
+    }
+  }
+}
+
+// Initialize the professional chatbot
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for Google Identity Services to load
+  if (typeof google !== 'undefined') {
+    window.chatBot = new ProfessionalChatBot();
+  } else {
+    // Fallback if Google doesn't load immediately
+    setTimeout(() => {
+      window.chatBot = new ProfessionalChatBot();
+    }, 1000);
+  }
+});
+</script>
+</body>
+</html>
